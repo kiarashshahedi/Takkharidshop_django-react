@@ -1,0 +1,33 @@
+// src/components/BuyerProfile.js
+import React, { useEffect, useState } from 'react';
+import { getProfile } from '../api';
+
+const BuyerProfile = () => {
+    const [profile, setProfile] = useState(null);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const userType = "buyer";
+            try {
+                const data = await getProfile(userType);
+                setProfile(data);
+            } catch (error) {
+                console.error("Failed to load profile:", error);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    if (!profile) return <div>Loading...</div>;
+
+    return (
+        <div>
+            <h1>Buyer Profile</h1>
+            <p>Username: {profile.username}</p>
+            <p>Email: {profile.email}</p>
+            {/* Display other buyer-specific info */}
+        </div>
+    );
+};
+
+export default BuyerProfile;

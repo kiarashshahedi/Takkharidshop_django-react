@@ -1,0 +1,40 @@
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from .models import MyUser, Customer, Seller
+
+class CustomerRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyUser
+        fields = ['mobile']
+
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['first_name', 'last_name', 'meli_code', 'address1', 'address2', 'city', 'zipcode', 'date_of_birth']
+
+class SellerRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyUser
+        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name']
+
+class SellerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Seller
+        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name']
+
+class OTPSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+    otp = serializers.IntegerField(required=False)
+
+class LoginSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        mobile = data.get("mobile", None)
+        password = data.get("password", None)
+        user = authenticate(mobile=mobile, password=password)
+        if user is None:
+            raise serializers.ValidationError("Invalid login credentials")
+        data['user'] = user
+        return data
