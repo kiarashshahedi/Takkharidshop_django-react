@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Product, Category, ProductImage, Review
+from .models import Product, Category, ProductImage, Review, Brand
 from .serializers import ProductSerializer, CategorySerializer, ReviewSerializer, ProductImageSerializer
 
 class ProductListView(generics.ListAPIView):
@@ -59,3 +59,4 @@ class AddProductImageView(generics.CreateAPIView):
 class CategoryListView(generics.ListAPIView):
     queryset = Category.objects.filter(parent=None) 
     serializer_class = CategorySerializer
+    

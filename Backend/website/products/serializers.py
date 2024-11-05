@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from .models import Product, Category, ProductImage, Review
 
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'parent', 'children']
+
+    def get_children(self, obj):
+        return CategorySerializer(obj.children, many=True).data
+    
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
@@ -23,12 +35,4 @@ class ProductSerializer(serializers.ModelSerializer):
             'sale_price', 'images', 'reviews'
         ]
 
-class CategorySerializer(serializers.ModelSerializer):
-    children = serializers.SerializerMethodField()
 
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'parent', 'children']
-
-    def get_children(self, obj):
-        return CategorySerializer(obj.children, many=True).data
