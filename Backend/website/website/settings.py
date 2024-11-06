@@ -21,13 +21,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # rest framework
     'rest_framework',
     'rest_framework_swagger',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
     
+    # additional 
+    'corsheaders',
+    'drf_spectacular',
+
     # apps
     'products',
     'cart',
@@ -101,12 +105,19 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
+
+    # JWT token to limit access to api endpoints
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # manage permissions 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # for making documentation with drf-spectacular package
+    'DEFAULT_SCHEMA_CLASS': (
+        'drf_spectacular.openapi.AutoSchema'
+    )
 }
 
 AUTH_USER_MODEL = 'users.MyUser'
@@ -126,3 +137,9 @@ CORS_ALLOWED_ORIGINS = [
 
 # kavenegar
 Kavenegar_API = ''
+
+# drf-spectacular
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Django DRF -Takkharid-Shop-Website',
+
+}
