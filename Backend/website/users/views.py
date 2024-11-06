@@ -21,6 +21,9 @@ from .serializers import (
     SellerProfileSerializer, OTPSerializer, LoginSerializer, DashboardSerializer
 )
 
+
+
+
 # Customer Registration
 @extend_schema_view(
     post=extend_schema(
@@ -28,9 +31,6 @@ from .serializers import (
         responses={"200": {"description": "OTP sent to mobile"}, "400": "Invalid data"}
     )
 )
-
-
-# Customer Registration
 class RegisterCustomerView(APIView):
 
     permission_classes = [AllowAny]
@@ -53,8 +53,6 @@ class RegisterCustomerView(APIView):
         responses={"200": {"description": "OTP sent to mobile"}, "400": "Invalid data"}
     )
 )
-
-# Seller Registration
 class RegisterSellerView(APIView):
 
     permission_classes = [AllowAny]
@@ -67,7 +65,7 @@ class RegisterSellerView(APIView):
             user.generate_otp()
             return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
 
 
 # Verify OTP
@@ -77,7 +75,6 @@ class RegisterSellerView(APIView):
         responses={"202": "Profile completion prompt", "400": "Invalid OTP or mobile"}
     )
 )
-# Verify OTP
 class VerifyOTPView(APIView):
     def post(self, request, user_type):
         serializer = OTPSerializer(data=request.data)
@@ -94,13 +91,28 @@ class VerifyOTPView(APIView):
                 refresh = RefreshToken.for_user(user)
                 user_type = 'seller' if user.is_seller else 'customer'
 
-                if user.is_seller:
-                    return Response({"message": "Complete seller profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
-                return Response({"message": "Complete customer profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
-            
+                return Response({
+                    "message": "Logged in successfully",
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                    "user_type": user_type
+                }, status=status.HTTP_202_ACCEPTED)
             except MyUser.DoesNotExist:
                 return Response({"error": "Invalid OTP or mobile"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+                # if user.is_seller:
+                #     return Response({"message": "Complete seller profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
+                # return Response({"message": "Complete customer profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
+            
+        #     except MyUser.DoesNotExist:
+        #         return Response({"error": "Invalid OTP or mobile"}, status=status.HTTP_400_BAD_REQUEST)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -109,8 +121,6 @@ class VerifyOTPView(APIView):
     request=CustomerProfileSerializer,
     responses={"200": "Profile completed successfully", "400": "Invalid data"}
 )
-
-# Complete Profile for Customer
 class CompleteCustomerProfileView(APIView):
     def post(self, request, user_id):
         user = MyUser.objects.get(id=user_id, is_customer=True)
@@ -119,14 +129,14 @@ class CompleteCustomerProfileView(APIView):
             Customer.objects.create(user=user, **serializer.validated_data)
             return Response({"message": "Customer profile completed successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
 
 # Complete Profile for Seller
 @extend_schema(
     request=SellerProfileSerializer,
     responses={"200": "Profile completed successfully", "400": "Invalid data"}
 )
-
-# Complete Profile for Seller
 class CompleteSellerProfileView(APIView):
     def post(self, request, user_id):
         user = MyUser.objects.get(id=user_id, is_seller=True)
@@ -137,11 +147,11 @@ class CompleteSellerProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 # Customer dashboard
 @extend_schema(
     responses=DashboardSerializer,
 )
-# Customer dashboard
 class CustomerDashboardView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -162,8 +172,6 @@ class CustomerDashboardView(APIView):
 @extend_schema(
     responses=DashboardSerializer,
 )
-
-# Seller dashboard
 class SellerDashboardView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -183,8 +191,6 @@ class SellerDashboardView(APIView):
     request=LoginSerializer,
     responses={"200": "Login successful", "400": "Invalid credentials"}
 )
-
-# Login
 class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -209,8 +215,6 @@ class LoginView(APIView):
     request=None,
     responses={"200": "Logged out successfully", "400": "Failed to logout"}
 )
-
-# Logout
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -222,3 +226,6 @@ class LogoutView(APIView):
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Failed to logout"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
