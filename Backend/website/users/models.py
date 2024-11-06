@@ -14,6 +14,7 @@ class MyUser(AbstractUser):
     is_customer = models.BooleanField(default=True)
     is_seller = models.BooleanField(default=False)
     username = models.CharField(max_length=150, unique=True, blank=True)  # Make username optional
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
 
     objects = MyUserManager()
 
@@ -37,22 +38,23 @@ class Customer(models.Model):
     user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='customer_profile')
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
-    meli_code = models.CharField(max_length=10, unique=True)
     date_of_birth = models.DateField()
-
     # Address
     address1 = models.CharField(max_length=200, blank=True)
     address2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=200, blank=True)
     zipcode = models.CharField(max_length=10)
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
 
 class Seller(models.Model):
     user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='seller_profile')
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
-    meli_code = models.CharField(max_length=10, blank=True ,unique=True)
     email = models.EmailField(max_length=100, unique=True)
     shop_name = models.CharField(max_length=100, null=True, blank=True)
     shop_address = models.CharField(max_length=200, null=True, blank=True)
     zipcode = models.CharField(max_length=10, null=True, blank=True)
     since_date = models.DateField()
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
+
+

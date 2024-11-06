@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import Product, Category, ProductImage, Review, Brand
 from .serializers import ProductSerializer, CategorySerializer, ReviewSerializer, ProductImageSerializer
+from drf_spectacular.utils import extend_schema
 
 class ProductListView(generics.ListAPIView):
     queryset = Product.objects.all()
@@ -31,10 +32,10 @@ class ProductUpdateView(generics.UpdateAPIView):
         return Product.objects.filter(seller=self.request.user)
 
 class ProductDeleteView(generics.DestroyAPIView):
+    serializer_class = ProductSerializer 
     permission_classes = [IsAuthenticated]
-
+    
     def get_queryset(self):
-        # Ensure the user can only delete their own products
         return Product.objects.filter(seller=self.request.user)
 
 class AddReviewView(generics.CreateAPIView):
@@ -56,7 +57,8 @@ class AddProductImageView(generics.CreateAPIView):
         product = Product.objects.get(pk=product_id)
         serializer.save(product=product)
 
+@extend_schema(description="List root categories")
 class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.filter(parent=None) 
+    queryset = Category.objects.filter(parent=None)
     serializer_class = CategorySerializer
     

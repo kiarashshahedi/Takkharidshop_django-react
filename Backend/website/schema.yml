@@ -84,6 +84,7 @@ paths:
   /api/products/categories/:
     get:
       operationId: products_categories_list
+      description: List root categories
       tags:
       - products
       security:
@@ -159,6 +160,151 @@ paths:
               schema:
                 $ref: '#/components/schemas/Product'
           description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /api/token/:
     post:
       operationId: token_create
@@ -222,7 +368,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/dashboard/seller/:
     get:
       operationId: users_dashboard_seller_retrieve
@@ -232,17 +384,49 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/login/:
     post:
       operationId: users_login_create
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/logout/:
     post:
       operationId: users_logout_create
@@ -252,7 +436,21 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/profile/customer/{user_id}/:
     post:
       operationId: users_profile_customer_create
@@ -264,11 +462,37 @@ paths:
         required: true
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerProfile'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/profile/seller/{user_id}/:
     post:
       operationId: users_profile_seller_create
@@ -280,33 +504,107 @@ paths:
         required: true
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellerProfile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SellerProfile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SellerProfile'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/register/customer/:
     post:
       operationId: users_register_customer_create
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerRegister'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                description: OTP sent to mobile
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/register/seller/:
     post:
       operationId: users_register_seller_create
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellerRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SellerRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SellerRegister'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                description: OTP sent to mobile
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
   /api/users/token/:
     post:
       operationId: users_token_create
@@ -366,11 +664,37 @@ paths:
       operationId: users_verify_otp_create
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OTP'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OTP'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OTP'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
 components:
   schemas:
     Category:
@@ -392,6 +716,66 @@ components:
       - children
       - id
       - name
+    CustomerProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          nullable: true
+          maxLength: 50
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 50
+        meli_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        address1:
+          type: string
+          maxLength: 200
+        address2:
+          type: string
+          maxLength: 200
+        city:
+          type: string
+          maxLength: 200
+        zipcode:
+          type: string
+          maxLength: 10
+        date_of_birth:
+          type: string
+          format: date
+      required:
+      - date_of_birth
+      - zipcode
+    CustomerRegister:
+      type: object
+      properties:
+        mobile:
+          type: string
+          maxLength: 11
+      required:
+      - mobile
+    Login:
+      type: object
+      properties:
+        mobile:
+          type: string
+        password:
+          type: string
+      required:
+      - mobile
+      - password
+    OTP:
+      type: object
+      properties:
+        mobile:
+          type: string
+        otp:
+          type: integer
+      required:
+      - mobile
     PatchedProduct:
       type: object
       properties:
@@ -553,6 +937,55 @@ components:
       - created_at
       - id
       - user
+    SellerProfile:
+      type: object
+      properties:
+        first_name:
+          type: string
+          nullable: true
+          maxLength: 50
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 50
+        meli_code:
+          type: string
+          nullable: true
+          maxLength: 10
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        shop_name:
+          type: string
+          nullable: true
+          maxLength: 100
+      required:
+      - email
+    SellerRegister:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        meli_code:
+          type: string
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        shop_name:
+          type: string
+        mobile:
+          type: string
+      required:
+      - meli_code
+      - mobile
+      - shop_name
     TokenObtainPair:
       type: object
       properties:

@@ -13,9 +13,12 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'meli_code', 'address1', 'address2', 'city', 'zipcode', 'date_of_birth']
 
 class SellerRegisterSerializer(serializers.ModelSerializer):
+    shop_name = serializers.CharField(required=True)
+    meli_code = serializers.CharField(required=True)
+    mobile = serializers.CharField(required=True)
     class Meta:
         model = MyUser
-        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name']
+        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name', 'mobile']
 
 class SellerProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,3 +41,7 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid login credentials")
         data['user'] = user
         return data
+    
+
+class DashboardSerializer():
+    pass
