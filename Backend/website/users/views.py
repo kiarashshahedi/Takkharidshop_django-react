@@ -90,9 +90,14 @@ class VerifyOTPView(APIView):
                 user.save()
                 login(request, user)
 
+                # Create tokens for the user
+                refresh = RefreshToken.for_user(user)
+                user_type = 'seller' if user.is_seller else 'customer'
+
                 if user.is_seller:
                     return Response({"message": "Complete seller profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
                 return Response({"message": "Complete customer profile", "user_id": user.id}, status=status.HTTP_202_ACCEPTED)
+            
             except MyUser.DoesNotExist:
                 return Response({"error": "Invalid OTP or mobile"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
