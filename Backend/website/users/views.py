@@ -77,7 +77,7 @@ class RegisterSellerView(APIView):
 )
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request, user_type):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -124,6 +124,8 @@ class VerifyOTPView(APIView):
     responses={"200": "Profile completed successfully", "400": "Invalid data"}
 )
 class CompleteCustomerProfileView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, user_id):
         user = MyUser.objects.get(id=user_id, is_customer=True)
         serializer = CustomerProfileSerializer(data=request.data)
@@ -140,6 +142,8 @@ class CompleteCustomerProfileView(APIView):
     responses={"200": "Profile completed successfully", "400": "Invalid data"}
 )
 class CompleteSellerProfileView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, user_id):
         user = MyUser.objects.get(id=user_id, is_seller=True)
         serializer = SellerProfileSerializer(data=request.data)
@@ -155,8 +159,9 @@ class CompleteSellerProfileView(APIView):
     responses=DashboardSerializer,
 )
 class CustomerDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
 
     serializer_class = DashboardSerializer
 
@@ -175,8 +180,10 @@ class CustomerDashboardView(APIView):
     responses=DashboardSerializer,
 )
 class SellerDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+
 
     def get(self, request):
         seller = request.user.seller_profile
@@ -194,6 +201,8 @@ class SellerDashboardView(APIView):
     responses={"200": "Login successful", "400": "Invalid credentials"}
 )
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -218,7 +227,9 @@ class LoginView(APIView):
     responses={"200": "Logged out successfully", "400": "Failed to logout"}
 )
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+
+    # permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
