@@ -76,6 +76,8 @@ class RegisterSellerView(APIView):
     )
 )
 class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]
+    
     def post(self, request, user_type):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
