@@ -31,14 +31,16 @@ class OTPSerializer(serializers.Serializer):
 
 class LoginSerializer(serializers.Serializer):
     mobile = serializers.CharField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        mobile = data.get("mobile", None)
-        password = data.get("password", None)
+        mobile = data.get("mobile")
+        password = data.get("password")
         user = authenticate(mobile=mobile, password=password)
         if user is None:
             raise serializers.ValidationError("Invalid login credentials")
+        if not user.is_verified:
+            raise serializers.ValidationError("Account not verified")
         data['user'] = user
         return data
     

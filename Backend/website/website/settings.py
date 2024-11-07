@@ -3,15 +3,12 @@ from datetime import timedelta
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 SECRET_KEY = os.environ.get('SECRET_KEY')
-
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -80,18 +77,10 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
 ]
 
 
@@ -117,21 +106,37 @@ REST_FRAMEWORK = {
     # for making documentation with drf-spectacular package
     'DEFAULT_SCHEMA_CLASS': (
         'drf_spectacular.openapi.AutoSchema'
-    )
+    ),
+
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '5/minute',
+        'user': '10/minute'
+    },
 }
 
 AUTH_USER_MODEL = 'users.MyUser'
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # مدت زمان اعتبار توکن دسترسی
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # مدت زمان اعتبار توکن رفرش
+    'ROTATE_REFRESH_TOKENS': True,  # چرخش توکن‌ها بعد از هر بار استفاده
+    'BLACKLIST_AFTER_ROTATION': True,  # سیاهه‌برداری از توکن‌های استفاده شده
+    'AUTH_HEADER_TYPES': ('Bearer',),  # نوع هدر توکن برای ارسال درخواست‌ها
+    'SIGNING_KEY': SECRET_KEY,  # کلید امضای توکن‌ها (همان SECRET_KEY پروژه)
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'ALGORITHM': 'HS256',  # الگوریتم رمزگذاری
 }
 
 # Allow requests from localhost:3000
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = [
+    "https://127.0.0.1:3000",  # دامنه فرانت خود را اضافه کنید
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # kavenegar
 Kavenegar_API = ''
@@ -141,3 +146,29 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'Django DRF -Takkharid-Shop-Website',
 
 }
+
+
+# تنظیمات اعتبارسنجی رمز عبور
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+# جلوگیری از حملات CSRF 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+
+# هدرهای امنیتی HTTP
+SECURE_HSTS_SECONDS = 31536000  # ۱ سال
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_BROWSER_XSS_FILTER = True
+
+
+
+API_KEY = 'thisisapikeytoaccesstoapiendpoints999'

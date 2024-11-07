@@ -12,7 +12,7 @@ urlpatterns = [
    
     path('register/customer/', RegisterCustomerView.as_view(), name='register_customer'),
     path('register/seller/', RegisterSellerView.as_view(), name='register_seller'),
-    path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
+    path('verify-otp/<str:user_type>/', VerifyOTPView.as_view(), name='verify-otp'),
     path('profile/customer/<int:user_id>/', CompleteCustomerProfileView.as_view(), name='complete_customer_profile'),
     path('profile/seller/<int:user_id>/', CompleteSellerProfileView.as_view(), name='complete_seller_profile'),
     path('dashboard/customer/', CustomerDashboardView.as_view(), name='customer_dashboard'),
