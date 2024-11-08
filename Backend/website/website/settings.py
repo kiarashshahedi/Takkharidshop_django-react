@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # additional 
     'corsheaders',
     'drf_spectacular',
+    'fernet_fields',
 
     # apps
     'products',
@@ -133,7 +134,7 @@ SIMPLE_JWT = {
 }
 
 # Allow requests from localhost:3000
-CORS_ALLOW_ALL_ORIGINS = [
+CORS_ALLOW_ORIGINS = [
     "https://127.0.0.1:3000",  # دامنه فرانت خود را اضافه کنید
 ]
 CORS_ALLOW_CREDENTIALS = True

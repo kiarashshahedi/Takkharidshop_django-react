@@ -6,20 +6,19 @@ import datetime
 from django.utils import timezone
 import random
 import hashlib
-from fernet_fields import EncryptedCharField
 
 
 
 class MyUser(AbstractUser):
     user = models.OneToOneField('self', on_delete=models.CASCADE, unique=True, related_name='MyUser', null=True)
-    mobile = models.EncryptedCharField(max_length=11, unique=True)
+    mobile = models.CharField(max_length=11, unique=True)
     is_verified = models.BooleanField(default=False)
     otp = models.IntegerField(blank=True, null=True)
     otp_create_time = models.DateTimeField(auto_now=True)
     is_customer = models.BooleanField(default=True)
     is_seller = models.BooleanField(default=False)
     username = models.CharField(max_length=150, unique=True, blank=True)  
-    meli_code = models.EncryptedCharField(max_length=10, blank=True ,unique=True, null=True,)
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
 
     objects = MyUserManager()
 
@@ -60,8 +59,8 @@ class Customer(models.Model):
     address1 = models.CharField(max_length=200, blank=True)
     address2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=200, blank=True)
-    zipcode = models.EncryptedCharField(max_length=10)
-    meli_code = models.EncryptedCharField(max_length=10, blank=True ,unique=True, null=True,)
+    zipcode = models.CharField(max_length=10)
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
 
 class Seller(models.Model):
     user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='seller_profile')
@@ -70,8 +69,8 @@ class Seller(models.Model):
     email = models.EmailField(max_length=100, unique=True)
     shop_name = models.CharField(max_length=100, null=True, blank=True)
     shop_address = models.CharField(max_length=200, null=True, blank=True)
-    zipcode = models.EncryptedCharField(max_length=10, null=True, blank=True)
+    zipcode = models.CharField(max_length=10, null=True, blank=True)
     since_date = models.DateField()
-    meli_code = models.EncryptedCharField(max_length=10, blank=True ,unique=True, null=True,)
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
 
 
