@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from .models import Product, Category, ProductImage, Review, Brand
 from drf_spectacular.utils import extend_schema
@@ -9,10 +9,14 @@ from .serializers import (
 )
 
 class ProductListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
 class ProductDetailView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
@@ -62,10 +66,14 @@ class AddProductImageView(generics.CreateAPIView):
 
 @extend_schema(description="List root categories")
 class CategoryListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    
     queryset = Category.objects.filter(parent=None)
     serializer_class = CategorySerializer
 
 @extend_schema(description="List Brands")
-class CategoryListView(generics.ListAPIView):
-    queryset = Brand.objects.filter(parent=None)
+class BrandListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+
+    queryset = Brand.objects.all()
     serializer_class = BrandSerializer
