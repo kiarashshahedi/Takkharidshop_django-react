@@ -77,3 +77,25 @@ class BrandListView(generics.ListAPIView):
 
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
+
+
+#-----additional-----------------------------------------------------
+class ProductListCreateView(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user)
+
+
+class ProductRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_seller:
+            return self.queryset.filter(seller=self.request.user)
+        else:
+            return self.queryset
+
+#------------------------------------------------------------------------------------
