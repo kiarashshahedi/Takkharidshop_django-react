@@ -1,7 +1,13 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import SellerProductViewSet, SellerOrderViewSet, SellerNotificationViewSet
+
+router = DefaultRouter()
+router.register(r'seller/products', SellerProductViewSet, basename='seller-products'),
+router.register(r'seller/orders', SellerOrderViewSet, basename='seller-orders'),
+router.register(r'seller/notifications', SellerNotificationViewSet, basename='seller-notifications')
+
 
 urlpatterns = [
-    # Define your paths here, for example:
-    # path('some-path/', views.SomeView.as_view(), name='some_view'),
+    path('', include(router.urls)),
 ]

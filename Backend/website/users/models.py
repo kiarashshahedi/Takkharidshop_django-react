@@ -25,9 +25,7 @@ class MyUser(AbstractUser):
     USERNAME_FIELD = 'mobile'
     REQUIRED_FIELDS = []
     backend = 'users.mybackend.ModelBackend'
-
-
-
+    
     def save(self, *args, **kwargs):
         if not self.username:
             self.username = self.mobile

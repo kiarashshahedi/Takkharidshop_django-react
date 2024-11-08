@@ -53,7 +53,7 @@ class Product(models.Model):
         return self.order_set.filter(status=True).count()
 
     def __str__(self):
-        return self.name
+        return f"{self.name} - {self.seller}"
 
 
 class ProductImage(models.Model):
