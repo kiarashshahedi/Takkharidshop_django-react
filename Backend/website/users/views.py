@@ -47,10 +47,20 @@ class RegisterCustomerView(APIKeyRequiredMixin, APIView):
         serializer = CustomerRegisterSerializer(data=request.data)
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
-            user, created = MyUser.objects.get_or_create(mobile=mobile, is_customer=True)
-            user.generate_otp()  # Generate OTP and save it to the database
-            return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
+            user, created = MyUser.objects.get_or_create(
+                mobile=mobile,
+                defaults={'is_customer': True}  # Set as customer if new user
+            )
+
+            # Generate and send OTP (regardless of whether new or existing user)
+            user.generate_otp()
+            return Response({
+                "message": "OTP sent to mobile",
+                "is_new_user": created  # Indicate if it's a new user
+            }, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # -----------------------------------------------------------------------------------------------
@@ -94,45 +104,30 @@ class VerifyOTPView(APIKeyRequiredMixin, APIView):
             mobile = serializer.validated_data['mobile']
             otp = serializer.validated_data['otp']
             try:
-                # Find user by mobile
-                user = MyUser.objects.filter(mobile=mobile).first()
+                user = MyUser.objects.get(mobile=mobile)
+                
+                # Check if the entered OTP matches the one saved in the database
+                if user.otp == otp and user.is_otp_valid(otp):
+                    user.is_verified = True
+                    user.save()
+                    refresh = RefreshToken.for_user(user)
+                    user_type = 'customer'
 
-                if not user:
-                    # If user doesn't exist, create the new user after OTP is verified
-                    user = MyUser.objects.create(mobile=mobile, is_customer=True)  # Create the user
-                    if user.is_otp_valid(otp):
-                        user.is_verified = True
-                        user.save()
-                        refresh = RefreshToken.for_user(user)
-
-                        return Response({
-                            "message": "User registered and logged in successfully",
-                            "access_token": str(refresh.access_token),
-                            "refresh_token": str(refresh),
-                            "user_type": "customer",
-                            "redirect_to": f"/profile/customer/{user.id}/"
-                        }, status=status.HTTP_201_CREATED)
-                    else:
-                        return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    # If the user exists, verify the OTP and log them in
-                    if user.is_otp_valid(otp):
-                        user.is_verified = True
-                        user.save()
-                        refresh = RefreshToken.for_user(user)
-
-                        return Response({
-                            "message": "Logged in successfully",
-                            "access_token": str(refresh.access_token),
-                            "refresh_token": str(refresh),
-                            "user_type": "customer",
-                            "redirect_to": f"/profile/customer/{user.id}/"
-                        }, status=status.HTTP_202_ACCEPTED)
-                    else:
-                        return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+                    # Check if the profile is completed for new users
+                    profile_exists = Customer.objects.filter(user=user).exists()
+                    
+                    return Response({
+                        "message": "Logged in successfully",
+                        "access_token": str(refresh.access_token),
+                        "refresh_token": str(refresh),
+                        "user_type": user_type,
+                        "profile_complete": profile_exists  # If False, prompt to complete profile
+                    }, status=status.HTTP_202_ACCEPTED)
+                
+                return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
             except MyUser.DoesNotExist:
                 return Response({"error": "Invalid mobile number"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
