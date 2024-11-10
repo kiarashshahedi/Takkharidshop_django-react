@@ -29,12 +29,14 @@ class MyUser(AbstractUser):
         super().save(*args, **kwargs)
         
     def generate_otp(self):
-        otp_plain = str(random.randint(100000, 999999))
-        self.otp = hashlib.sha256(otp_plain.encode()).hexdigest()
+        # otp_plain = str(random.randint(100000, 999999))
+        otp = str(random.randint(100000, 999999))
+        # self.otp = hashlib.sha256(otp_plain.encode()).hexdigest()
+        self.otp = otp
         self.otp_create_time = timezone.now()
         self.save()
-        print(otp_plain)
-        return otp_plain
+        print(f"Generated OTP for {self.mobile}: {otp}")  # Print OTP to the terminal
+        return otp
      
     def is_otp_valid(self, otp_plain):
         otp_hashed = hashlib.sha256(otp_plain.encode()).hexdigest()
