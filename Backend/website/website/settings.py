@@ -7,8 +7,13 @@ load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 SECRET_KEY = os.environ.get('SECRET_KEY')
+
+os.environ.get('API_KEY')
+
 DEBUG = True
+
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -18,18 +23,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # rest framework
     'rest_framework',
     'rest_framework_swagger',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    
     # additional 
     'corsheaders',
     'drf_spectacular',
     'fernet_fields',
-
     # apps
     'products',
     'users',
@@ -46,7 +48,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-
 ]
 
 ROOT_URLCONF = 'website.urls'
@@ -147,9 +148,7 @@ SPECTACULAR_SETTINGS = {
 
 }
 
-
 # تنظیمات اعتبارسنجی رمز عبور
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', 'OPTIONS': {'min_length': 8}},
@@ -163,12 +162,12 @@ CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 
 # هدرهای امنیتی HTTP
-SECURE_HSTS_SECONDS = 31536000  # ۱ سال
+SECURE_HSTS_SECONDS = 9  # ۱ سال
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_BROWSER_XSS_FILTER = True
 
 
-
-API_KEY = 'thisisapikeytoaccesstoapiendpoints999'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
