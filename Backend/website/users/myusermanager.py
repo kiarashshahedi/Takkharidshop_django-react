@@ -2,9 +2,10 @@ from django.contrib.auth.base_user import BaseUserManager
 
 
 class MyUserManager(BaseUserManager):
+
     def create_user(self, mobile, password=None, **other_fields):
         if not mobile:
-            raise ValueError("mobile is required...!")
+            raise ValueError("Mobile is required...!")
         user = self.model(mobile=mobile, **other_fields)
         user.set_password(password)
         user.save()
@@ -16,15 +17,15 @@ class MyUserManager(BaseUserManager):
         other_fields.setdefault('is_active', True)
 
         if other_fields.get('is_staff') is not True:
-            raise ValueError('Superuser muse have is_staff=True')
+            raise ValueError('Superuser muse have is_staff')
         if other_fields.get('is_superuser') is not True:
-            raise ValueError('Superuser muse have is_superuser=True')
+            raise ValueError('Superuser muse have is_superuser')
         return self.create_user(mobile, password, **other_fields)
     
-    def create_user_with_pass(self, mobile, password, username, **other_fields):
+    def create_user_with_pass(self, mobile, password, **other_fields):
         if not mobile:
-            raise ValueError("mobile is required...!")
-        user = self.model(mobile=mobile, username=username **other_fields)
+            raise ValueError("Mobile is required!")
+        user = self.model(mobile=mobile, **other_fields)
         user.set_password(password)
         user.save()
         return user

@@ -12,10 +12,11 @@ from .models import MyUser
 #             return None
 
 class MobileBackend(ModelBackend):
-
     def authenticate(self, request, username=None, password=None, **kwargs):
-        mobile = kwargs['mobile']
+        mobile = kwargs.get('mobile') or username
         try:
             user = MyUser.objects.get(mobile=mobile)
+            if user.check_password(password):
+                return user
         except MyUser.DoesNotExist:
-            pass
+            return None

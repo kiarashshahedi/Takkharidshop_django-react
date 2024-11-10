@@ -2,14 +2,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
-
 # restframework
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied
-
 # Tokens
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -19,7 +17,7 @@ from products.models import Product
 from products.serializers import ProductSerializer
 # docs 
 from drf_spectacular.utils import extend_schema, extend_schema_view
-# serializer
+
 from .serializers import (
     CustomerRegisterSerializer, SellerRegisterSerializer, CustomerProfileSerializer, 
     SellerProfileSerializer, OTPSerializer, LoginSerializer, DashboardSerializer
@@ -50,9 +48,16 @@ class RegisterCustomerView(APIKeyRequiredMixin, APIView):
         serializer = CustomerRegisterSerializer(data=request.data)
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
-            user, created = MyUser.objects.get_or_create(mobile=mobile, is_customer=True)
-            user.generate_otp()
-            return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
+            # Check if the user already exists, but don't create it yet.
+            user = MyUser.objects.filter(mobile=mobile).first()
+            if user:
+                # If the user already exists, generate and send the OTP
+                user.generate_otp()
+                return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
+            else:
+                # If the user doesn't exist, just return an error (they will be created after OTP is verified)
+                return Response({"error": "Mobile not registered, please verify your OTP first."}, 
+                                 status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -91,19 +96,25 @@ class RegisterSellerView(APIKeyRequiredMixin, APIView):
 class VerifyOTPView(APIKeyRequiredMixin, APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, user_type):
+    def post(self, request):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
             otp = serializer.validated_data['otp']
             try:
+                # Find user by mobile
                 user = MyUser.objects.get(mobile=mobile)
+                
+                # Check if OTP is valid
                 if user.is_otp_valid(otp):
                     user.is_verified = True
                     user.save()
-                    login(request, user)
                     
-                    # Create tokens for the user
+                    # If user doesn't exist yet, create it after OTP is verified
+                    if user.is_verified and not user.is_customer:
+                        user.is_customer = True
+                        user.save()
+
                     refresh = RefreshToken.for_user(user)
                     user_type = 'seller' if user.is_seller else 'customer'
 
@@ -113,8 +124,7 @@ class VerifyOTPView(APIKeyRequiredMixin, APIView):
                         "refresh_token": str(refresh),
                         "user_type": user_type
                     }, status=status.HTTP_202_ACCEPTED)
-                else:
-                    return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
             except MyUser.DoesNotExist:
                 return Response({"error": "Invalid mobile number"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

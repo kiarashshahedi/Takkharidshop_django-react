@@ -317,3 +317,420 @@ export default VendorLoginForm;
 This covers the updated user management functionality for the ecommerce website, where customers can register and log in with mobile number and OTP, while vendors can register with mobile number, OTP, ID number, and postal code, and log in with ID number, mobile number, and OTP.
 
 Let me know if you have any other questions or if you'd like me to continue with the implementation of other components.
+
+
+-------------------------------------------------------------------------------------------------------------------
+well , this is my USERS app files :
+
+this is models.py:
+
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
+from .myusermanager import MyUserManager
+import datetime
+from django.utils import timezone
+import random
+import hashlib
+
+
+class MyUser(AbstractUser):
+    user = models.OneToOneField('self', on_delete=models.CASCADE, unique=True, related_name='MyUser', null=True)
+    mobile = models.CharField(max_length=11, unique=True)
+    is_verified = models.BooleanField(default=False)
+    otp = models.IntegerField(blank=True, null=True)
+    otp_create_time = models.DateTimeField(auto_now=True)
+    is_customer = models.BooleanField(default=True)
+    is_seller = models.BooleanField(default=False)
+    username = models.CharField(max_length=150, unique=True, blank=True)  
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
+
+    objects = MyUserManager()
+
+    USERNAME_FIELD = 'mobile'
+    REQUIRED_FIELDS = []
+    backend = 'users.mybackend.ModelBackend'
+    
+    def save(self, *args, **kwargs):
+        if not self.username:
+            self.username = self.mobile
+        super().save(*args, **kwargs)
+        
+    def generate_otp(self):
+        # OTP generation and hash
+        otp_plain = str(random.randint(100000, 999999))
+        self.otp = hashlib.sha256(otp_plain.encode()).hexdigest()
+        self.otp_create_time = timezone.now()
+        self.save()
+        return otp_plain  # Send this OTP to the user via SMS
+     
+    def is_otp_valid(self, otp_plain):
+        # Check if OTP is correct and within 5 minutes
+        otp_hashed = hashlib.sha256(otp_plain.encode()).hexdigest()
+        is_valid = (
+            self.otp == otp_hashed and 
+            timezone.now() - self.otp_create_time < datetime.timedelta(minutes=5)
+        )
+        return is_valid
+
+class Customer(models.Model):
+    user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='customer_profile')
+    first_name = models.CharField(max_length=50, null=True, blank=True)
+    last_name = models.CharField(max_length=50, null=True, blank=True)
+    date_of_birth = models.DateField()
+    # Address
+    address1 = models.CharField(max_length=200, blank=True)
+    address2 = models.CharField(max_length=200, blank=True)
+    city = models.CharField(max_length=200, blank=True)
+    zipcode = models.CharField(max_length=10)
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
+
+class Seller(models.Model):
+    user = models.OneToOneField(MyUser, on_delete=models.CASCADE, related_name='seller_profile')
+    first_name = models.CharField(max_length=50, null=True, blank=True)
+    last_name = models.CharField(max_length=50, null=True, blank=True)
+    email = models.EmailField(max_length=100, unique=True)
+    shop_name = models.CharField(max_length=100, null=True, blank=True)
+    shop_address = models.CharField(max_length=200, null=True, blank=True)
+    zipcode = models.CharField(max_length=10, null=True, blank=True)
+    since_date = models.DateField()
+    meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
+
+
+and this is  mybackend.py file:
+
+from django.contrib.auth.backends import ModelBackend
+from .models import MyUser
+
+
+class MobileBackend(ModelBackend):
+
+    def authenticate(self, request, username=None, password=None, **kwargs):
+        mobile = kwargs['mobile']
+        try:
+            user = MyUser.objects.get(mobile=mobile)
+        except MyUser.DoesNotExist:
+            passviews.py :
+
+and this is myusermanager.py :
+
+from django.contrib.auth.base_user import BaseUserManager
+
+
+class MyUserManager(BaseUserManager):
+    def create_user(self, mobile, password=None, **other_fields):
+        if not mobile:
+            raise ValueError("mobile is required...!")
+        user = self.model(mobile=mobile, **other_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, mobile, password=None, **other_fields):
+        other_fields.setdefault('is_staff', True)
+        other_fields.setdefault('is_superuser', True)
+        other_fields.setdefault('is_active', True)
+
+        if other_fields.get('is_staff') is not True:
+            raise ValueError('Superuser muse have is_staff=True')
+        if other_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser muse have is_superuser=True')
+        return self.create_user(mobile, password, **other_fields)
+    
+    def create_user_with_pass(self, mobile, password, username, **other_fields):
+        if not mobile:
+            raise ValueError("mobile is required...!")
+        user = self.model(mobile=mobile, username=username **other_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+
+    
+and this is views.py file: 
+
+from django.contrib.auth import authenticate, login, logout
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+from django.conf import settings
+
+# restframework
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import PermissionDenied
+
+# Tokens
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.authentication import JWTAuthentication
+# files
+from .models import MyUser, Customer, Seller
+from products.models import Product
+from products.serializers import ProductSerializer
+# docs 
+from drf_spectacular.utils import extend_schema, extend_schema_view
+# serializer
+from .serializers import (
+    CustomerRegisterSerializer, SellerRegisterSerializer, CustomerProfileSerializer, 
+    SellerProfileSerializer, OTPSerializer, LoginSerializer, DashboardSerializer
+)
+
+
+# Custom APIKeyRequiredMixin
+class APIKeyRequiredMixin:
+    def dispatch(self, request, *args, **kwargs):
+        api_key = request.headers.get('X-API-KEY')
+        if api_key != settings.API_KEY:
+            raise PermissionDenied("Invalid API Key")
+        return super().dispatch(request, *args, **kwargs)
+
+# Customer Registration
+@extend_schema_view(
+    post=extend_schema(
+        request=CustomerRegisterSerializer,
+        responses={"200": {"description": "OTP sent to mobile"}, "400": "Invalid data"}
+    )
+)
+class RegisterCustomerView(APIKeyRequiredMixin, APIView):
+
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        serializer = CustomerRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            mobile = serializer.validated_data['mobile']
+            user, created = MyUser.objects.get_or_create(mobile=mobile, is_customer=True)
+            user.generate_otp()
+            return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Seller Registration
+@extend_schema_view(
+    post=extend_schema(
+        request=SellerRegisterSerializer,
+        responses={"200": {"description": "OTP sent to mobile"}, "400": "Invalid data"}
+    )
+)
+class RegisterSellerView(APIKeyRequiredMixin, APIView):
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = SellerRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            mobile = serializer.validated_data['mobile']
+            user, created = MyUser.objects.get_or_create(mobile=mobile, is_seller=True)
+            user.generate_otp()
+            return Response({"message": "OTP sent to mobile"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Verify OTP
+@extend_schema_view(
+    post=extend_schema(
+        request=OTPSerializer,
+        responses={"202": "Profile completion prompt", "400": "Invalid OTP or mobile"}
+    )
+)
+class VerifyOTPView(APIKeyRequiredMixin, APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, user_type):
+        serializer = OTPSerializer(data=request.data)
+        if serializer.is_valid():
+            mobile = serializer.validated_data['mobile']
+            otp = serializer.validated_data['otp']
+            try:
+                user = MyUser.objects.get(mobile=mobile)
+                if user.is_otp_valid(otp):
+                    user.is_verified = True
+                    user.save()
+                    login(request, user)
+                    
+                    # Create tokens for the user
+                    refresh = RefreshToken.for_user(user)
+                    user_type = 'seller' if user.is_seller else 'customer'
+
+                    return Response({
+                        "message": "Logged in successfully",
+                        "access_token": str(refresh.access_token),
+                        "refresh_token": str(refresh),
+                        "user_type": user_type
+                    }, status=status.HTTP_202_ACCEPTED)
+                else:
+                    return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            except MyUser.DoesNotExist:
+                return Response({"error": "Invalid mobile number"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Complete Profile for Customer
+@extend_schema(
+    request=CustomerProfileSerializer,
+    responses={"200": "Profile completed successfully", "400": "Invalid data"}
+)
+class CompleteCustomerProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request, user_id):
+        user = MyUser.objects.get(id=user_id, is_customer=True)
+        serializer = CustomerProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            Customer.objects.create(user=user, **serializer.validated_data)
+            return Response({"message": "Customer profile completed successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# Complete Profile for Seller
+@extend_schema(
+    request=SellerProfileSerializer,
+    responses={"200": "Profile completed successfully", "400": "Invalid data"}
+)
+class CompleteSellerProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request, user_id):
+        user = MyUser.objects.get(id=user_id, is_seller=True)
+        serializer = SellerProfileSerializer(data=request.data)
+        if serializer.is_valid():
+            Seller.objects.create(user=user, **serializer.validated_data)
+            return Response({"message": "Seller profile completed successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Customer dashboard
+@extend_schema(
+    responses=DashboardSerializer,
+)
+class CustomerDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    serializer_class = DashboardSerializer
+
+    def get(self, request):
+        customer = request.user.customer_profile
+        orders = []  # Fetch customer orders here
+        return Response({
+            "customer_info": CustomerProfileSerializer(customer).data,
+            "orders": orders,
+        })
+
+
+# Seller dashboard
+@extend_schema(
+    responses=DashboardSerializer,
+)
+class SellerDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+
+    def get(self, request):
+        seller = request.user.seller_profile
+        products = Product.objects.filter(seller=request.user)
+        product_serializer = ProductSerializer(products, many=True)
+        return Response({
+            "seller_info": SellerProfileSerializer(seller).data,
+            "products": product_serializer.data,
+        })
+
+# Login
+@extend_schema(
+    request=LoginSerializer,
+    responses={"200": "Login successful", "400": "Invalid credentials"}
+)
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    @ratelimit(key='ip', rate='5/m', method='POST', block=True)
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            mobile = serializer.validated_data['mobile']
+            password = serializer.validated_data['password']
+            user = authenticate(request, mobile=mobile, password=password)
+            if user:
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "message": "Logged in successfully",
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh)
+                })
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Logout
+@extend_schema(
+    request=None,
+    responses={"200": "Logged out successfully", "400": "Failed to logout"}
+)
+class LogoutView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to logout"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+and this is serializers.py file:
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from .models import MyUser, Customer, Seller
+
+class CustomerRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MyUser
+        fields = ['mobile']
+
+class CustomerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['first_name', 'last_name', 'meli_code', 'address1', 'address2', 'city', 'zipcode', 'date_of_birth']
+
+class SellerRegisterSerializer(serializers.ModelSerializer):
+    shop_name = serializers.CharField(required=True)
+    meli_code = serializers.CharField(required=True)
+    mobile = serializers.CharField(required=True)
+    class Meta:
+        model = MyUser
+        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name', 'mobile']
+
+class SellerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Seller
+        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name']
+
+class OTPSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+    otp = serializers.IntegerField(required=False)
+
+class LoginSerializer(serializers.Serializer):
+    mobile = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        mobile = data.get("mobile")
+        password = data.get("password")
+        user = authenticate(mobile=mobile, password=password)
+        if user is None:
+            raise serializers.ValidationError("Invalid login credentials")
+        if not user.is_verified:
+            raise serializers.ValidationError("Account not verified")
+        data['user'] = user
+        return data
+    
+
+class DashboardSerializer():
+    pass

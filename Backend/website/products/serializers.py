@@ -67,7 +67,8 @@ class ProductSerializer(serializers.ModelSerializer):
 #---------------------------------------------------------------------------
 
 class BrandSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()  
 
     class Meta:
         model = Brand 
-        fields = "__all__"
+        fields = ['image_url', 'name', 'image']

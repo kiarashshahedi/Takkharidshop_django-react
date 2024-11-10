@@ -2,15 +2,18 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+from django.core.exceptions import ImproperlyConfigured
+
 
 load_dotenv()
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
-os.environ.get('API_KEY')
+API_KEY = os.environ.get('API_KEY')
+if not API_KEY:
+    raise ImproperlyConfigured("API_KEY is not set in environment variables")
 
 DEBUG = True
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'website.middleware.APIKeyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -134,9 +138,8 @@ SIMPLE_JWT = {
 }
 
 # Allow requests from localhost:3000
-CORS_ALLOW_ORIGINS = [
-    "https://127.0.0.1:3000",  # دامنه فرانت خود را اضافه کنید
-]
+CORS_ALLOW_ALL_ORIGINS = True
+
 CORS_ALLOW_CREDENTIALS = True
 
 # kavenegar
