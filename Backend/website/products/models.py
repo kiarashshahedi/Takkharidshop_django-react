@@ -11,6 +11,7 @@ from django.db.models import Avg
 class Category(MPTTModel):
     name = models.CharField(max_length=100)
     parent = TreeForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='children')
+    icon = models.ImageField(upload_to='category_icons/', null=True, blank=True)
 
     class MPTTMeta:
         verbose_name_plural = "Categories"
