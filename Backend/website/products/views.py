@@ -6,12 +6,12 @@ from drf_spectacular.utils import extend_schema
 from .permissions import IsSeller
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema_view, extend_schema
+from rest_framework.views import APIView
 
 from .serializers import (
     ProductSerializer, CategorySerializer, ReviewSerializer, 
     ProductImageSerializer, BrandSerializer,
 )
-
 
 
 class ProductListView(generics.ListAPIView):
@@ -28,6 +28,16 @@ class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+#-----------------------------------------------------------------------------------
+
+class SaleProductListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        products_on_sale = Product.objects.filter(in_sale=True)
+        serializer = ProductSerializer(products_on_sale, many=True, context={'request': request})
+        return Response(serializer.data)
+    
 #-----------------------------------------------------------------------------------
 
 # Seller add-update-remove products
