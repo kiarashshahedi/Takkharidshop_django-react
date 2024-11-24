@@ -2,48 +2,35 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import MyUser, Customer, Seller
 
-class CustomerRegisterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MyUser
-        fields = ['mobile']
 
-class CustomerProfileSerializer(serializers.ModelSerializer):
+# Serializer for completing the customer profile
+class CompleteCustomerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['first_name', 'last_name', 'meli_code', 'address1', 'address2', 'city', 'zipcode', 'date_of_birth']
 
-class SellerRegisterSerializer(serializers.ModelSerializer):
-    shop_name = serializers.CharField(required=True)
-    meli_code = serializers.CharField(required=True)
-    mobile = serializers.CharField(required=True)
+# Serializer for seller registration (Step 1)
+class SellerRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = MyUser
-        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name', 'mobile']
+        fields = ['mobile', 'meli_code']
 
-class SellerProfileSerializer(serializers.ModelSerializer):
+# Serializer for seller additional details (Step 2)
+class CompleteSellerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seller
-        fields = ['first_name', 'last_name', 'meli_code', 'email', 'shop_name']
+        fields = ['first_name', 'last_name', 'since_date', 'business_license', 'shop_name', 'shop_address', 'zipcode']
 
+# Serializer for generating and verifying OTP
 class OTPSerializer(serializers.Serializer):
-    mobile = serializers.CharField()
-    otp = serializers.IntegerField(required=False)
+    mobile = serializers.CharField(max_length=11)
+    otp = serializers.CharField(max_length=6, required=False)
 
-class LoginSerializer(serializers.Serializer):
-    mobile = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        mobile = data.get("mobile")
-        password = data.get("password")
-        user = authenticate(mobile=mobile, password=password)
-        if user is None:
-            raise serializers.ValidationError("Invalid login credentials")
-        if not user.is_verified:
-            raise serializers.ValidationError("Account not verified")
-        data['user'] = user
-        return data
-    
+# Serializer for seller login
+class SellerLoginSerializer(serializers.Serializer):
+    mobile = serializers.CharField(max_length=11)
+    meli_code = serializers.CharField(max_length=10)
+    otp = serializers.CharField(max_length=6)
 
 class DashboardSerializer():
     pass
