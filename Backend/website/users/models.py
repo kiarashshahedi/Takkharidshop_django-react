@@ -31,18 +31,18 @@ class MyUser(AbstractUser):
         
     def generate_otp(self):
         self.otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
-        self.otp_create_time = datetime.now()  # Set OTP creation time
+        self.otp_create_time = now()  # Use timezone-aware `now()`
         self.save()
         print(f"Generated OTP for {self.mobile}: {self.otp}")
         return self.otp
-
+    
     def is_otp_valid(self, otp):
         # Check if the entered OTP matches the saved one and is within the validity period
         if self.otp == otp:
-            if self.otp_created_time:
+            if self.otp_create_time:
                 # OTP validity: 10 minutes
                 otp_expiry_time = timedelta(minutes=10)
-                if datetime.now() <= self.otp_created_time + otp_expiry_time:
+                if now() <= self.otp_create_time + otp_expiry_time:  # Use timezone-aware `now()`
                     return True
         return False
        
