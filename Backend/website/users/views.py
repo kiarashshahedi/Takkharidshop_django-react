@@ -17,8 +17,6 @@ from rest_framework.exceptions import PermissionDenied
 # Tokens
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.authtoken.models import Token
 
 # files
 from .models import MyUser, Customer, Seller
@@ -100,7 +98,7 @@ class VerifyCustomerOTPView(APIView):
 
 # Complete Customer Profile
 class CompleteCustomerProfileView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsCustomer]
 
     def post(self, request):
@@ -130,7 +128,7 @@ class SellerRegisterView(APIView):
 
 # Complete Seller Profile (Step 2)
 class CompleteSellerProfileView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, IsSeller]
 
     def post(self, request):
@@ -159,13 +157,17 @@ class SellerLoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LogoutView(APIView):
-    authentication_classes = [TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Delete the user's token to log them out
         try:
-            request.user.auth_token.delete()
-            return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+            # Blacklist the refresh token to log the user out
+            refresh_token = request.data.get('refresh')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+                return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
+            return Response({'error': 'Refresh token is required for logout.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({'error': 'Failed to log out.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
