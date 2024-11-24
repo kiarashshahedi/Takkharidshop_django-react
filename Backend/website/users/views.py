@@ -1,7 +1,12 @@
+
+import datetime
+import time
 from django.contrib.auth import authenticate, login, logout
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from django.conf import settings
+import logging
+
 # restframework
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,6 +20,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import MyUser, Customer, Seller
 from products.models import Product
 from products.serializers import ProductSerializer
+from . import kavesms 
+from .kavesms import get_random_otp, check_otp_expiration
+
 # docs 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
@@ -23,6 +31,7 @@ from .serializers import (
     SellerProfileSerializer, OTPSerializer, LoginSerializer, DashboardSerializer
 )
 
+logger = logging.getLogger(__name__)
 
 # Custom APIKeyRequiredMixin
 class APIKeyRequiredMixin:
@@ -44,23 +53,45 @@ class RegisterCustomerView(APIKeyRequiredMixin, APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+
         serializer = CustomerRegisterSerializer(data=request.data)
+
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
-            user, created = MyUser.objects.get_or_create(
-                mobile=mobile,
-                defaults={'is_customer': True}  # Set as customer if new user
-            )
 
-            # Generate and send OTP (regardless of whether new or existing user)
-            user.generate_otp()
-            return Response({
-                "message": "OTP sent to mobile",
-                "is_new_user": created  # Indicate if it's a new user
-            }, status=status.HTTP_200_OK)
+            try:
+                # Check if user already exists
+                user = MyUser.objects.get(mobile=mobile)
+
+                # Generate and send OTP for existing user
+                otp = get_random_otp()
+                user.otp = otp
+                user.save()
+
+                # # Simulate sending OTP via SMS
+                # kavesms.send_otp_soap(mobile, otp)
+                # print(f"OTP sent to {mobile}: {otp}")
+
+                # User already exists, no need to create new user
+                return Response({"message": "OTP sent to existing user successfully. Please verify OTP."}, status=status.HTTP_200_OK)
+
+            except MyUser.DoesNotExist:
+                # If user does not exist, create a new user
+                user = MyUser.objects.create_user(username=mobile, mobile=mobile, is_active=False, is_customer=True)
+
+                # Generate and send OTP for new user
+                otp = get_random_otp()
+                user.otp = otp
+                user.save()
+
+                # # Simulate sending OTP via SMS
+                # kavesms.send_otp_soap(mobile, otp)
+                # print(f"OTP sent to {mobile}: {otp}")
+
+                # Return response to complete profile after OTP verification
+                return Response({"message": "New user created. OTP sent. Please verify OTP."}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 # -----------------------------------------------------------------------------------------------
@@ -95,7 +126,7 @@ class RegisterSellerView(APIKeyRequiredMixin, APIView):
         responses={"202": "Profile completion prompt", "400": "Invalid OTP or mobile"}
     )
 )
-class VerifyOTPView(APIKeyRequiredMixin, APIView):
+class VerifyOTPView( APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -103,31 +134,45 @@ class VerifyOTPView(APIKeyRequiredMixin, APIView):
         if serializer.is_valid():
             mobile = serializer.validated_data['mobile']
             otp = serializer.validated_data['otp']
+
             try:
                 user = MyUser.objects.get(mobile=mobile)
-                
-                # Check if the entered OTP matches the one saved in the database
-                if user.otp == otp and user.is_otp_valid(otp):
-                    user.is_verified = True
-                    user.save()
-                    refresh = RefreshToken.for_user(user)
-                    user_type = 'customer'
 
-                    # Check if the profile is completed for new users
-                    profile_exists = Customer.objects.filter(user=user).exists()
-                    
+                # Check OTP expiration
+                if not check_otp_expiration(user):
+                    return Response({"error": "OTP has expired"}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Verify OTP
+                if str(user.otp) != str(otp):
+                    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Mark user as active and authenticated
+                user.is_active = True
+                user.otp = None  # Clear OTP after successful verification
+                user.otp_create_time = None
+                user.save()
+
+                # Generate JWT tokens
+                refresh = RefreshToken.for_user(user)
+
+                # Optionally, if the user is new, redirect them to the profile completion page
+                if not user.profile_completed:  # Assuming you have a flag for profile completion
                     return Response({
-                        "message": "Logged in successfully",
+                        "message": "Logged in successfully. Please complete your profile.",
                         "access_token": str(refresh.access_token),
                         "refresh_token": str(refresh),
-                        "user_type": user_type,
-                        "profile_complete": profile_exists  # If False, prompt to complete profile
-                    }, status=status.HTTP_202_ACCEPTED)
-                
-                return Response({"error": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+                    }, status=status.HTTP_200_OK)
+
+                # If user has completed the profile, return success
+                return Response({
+                    "message": "Logged in successfully",
+                    "access_token": str(refresh.access_token),
+                    "refresh_token": str(refresh),
+                }, status=status.HTTP_200_OK)
+
             except MyUser.DoesNotExist:
-                return Response({"error": "Invalid mobile number"}, status=status.HTTP_400_BAD_REQUEST)
-        
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

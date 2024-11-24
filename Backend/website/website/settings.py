@@ -137,10 +137,13 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',  # الگوریتم رمزگذاری
 }
 
-# Allow requests from localhost:3000
+# / CORS / Allow requests from localhost:3000 (React)
 CORS_ALLOW_ALL_ORIGINS = True
-
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "x-api-key",
+]
 
 # kavenegar
 Kavenegar_API = ''

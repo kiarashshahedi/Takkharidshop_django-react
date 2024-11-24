@@ -2,21 +2,22 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import User
 from .myusermanager import MyUserManager
-import datetime
 from django.utils import timezone
 import random
 import hashlib
+from datetime import datetime, timedelta
+from django.utils.timezone import now
 
 
 
 class MyUser(AbstractUser):
     mobile = models.CharField(max_length=11, unique=True)
-    is_verified = models.BooleanField(default=False)
-    otp = models.CharField(max_length=64, blank=True, null=True)  # Storing hashed OTP
-    otp_create_time = models.DateTimeField(auto_now=True)
+    otp = models.CharField(max_length=6, blank=True, null=True)  # Store 6-digit OTP
+    otp_create_time = models.DateTimeField(auto_now=True)  # Store OTP creation time
     is_customer = models.BooleanField(default=True)
     is_seller = models.BooleanField(default=False)
     meli_code = models.CharField(max_length=10, blank=True, unique=True, null=True)
+    is_verified = models.BooleanField(default=False)
 
     objects = MyUserManager()
 
@@ -29,19 +30,21 @@ class MyUser(AbstractUser):
         super().save(*args, **kwargs)
         
     def generate_otp(self):
-        otp = str(random.randint(100000, 999999))
-        self.otp = otp
-        self.otp_create_time = timezone.now()
+        self.otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
+        self.otp_create_time = datetime.now()  # Set OTP creation time
         self.save()
-        print(f"Generated OTP for {self.mobile}: {otp}")
-        return otp
-     
+        print(f"Generated OTP for {self.mobile}: {self.otp}")
+        return self.otp
+
     def is_otp_valid(self, otp):
-        is_valid = (
-            self.otp == otp and 
-            timezone.now() - self.otp_create_time < timezone.timedelta(minutes=5)
-        )
-        return is_valid
+        # Check if the entered OTP matches the saved one and is within the validity period
+        if self.otp == otp:
+            if self.otp_created_time:
+                # OTP validity: 10 minutes
+                otp_expiry_time = timedelta(minutes=10)
+                if datetime.now() <= self.otp_created_time + otp_expiry_time:
+                    return True
+        return False
        
 
 class Customer(models.Model):
@@ -66,5 +69,9 @@ class Seller(models.Model):
     zipcode = models.CharField(max_length=10, null=True, blank=True)
     since_date = models.DateField()
     meli_code = models.CharField(max_length=10, blank=True ,unique=True, null=True,)
+    is_approved = models.BooleanField(default=False)  # Admin approval
+    business_license = models.FileField(upload_to='licenses/', null=True, blank=True)  # For verification
 
 
+    def __str__(self):
+        return self.shop_name or self.user.username

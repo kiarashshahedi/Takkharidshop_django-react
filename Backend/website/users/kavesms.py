@@ -6,64 +6,16 @@ from . import models
 import datetime
 import time
 # from background_task import background
-
-
-
-
-def send_otp(mobile, otp):
-    mobile = [mobile, ]
-    try:
-        api = KavenegarAPI(Kavenegar_API)
-        params = { 
-            'sender' : '1000689696', 
-            'receptor': mobile, 
-            'message' : 'your otp is {}'.format(otp),
-         }
-        response = api.sms_send( params)
-        print("OTP: ", otp)
-        print(response)
-    except APIException as e :
-        print(e)
-    except HTTPException as e :
-        print(e)
-
-
-
-
-#@background(schedule=10)
-def send_otp_soap(mobile, otp):
-
-    time.sleep(10)
-    client = Client('http://api.kavenegar.com/soap/v1.asmx?wsdl')
-    receptor = [mobile, ]
-
-    empty_array_placeholder = client.get_type('ns0:ArrayOfString')
-    receptors = empty_array_placeholder()
-    for item in receptor:
-        receptors['string'].append(item)
-
-    api_key = Kavenegar_API
-    message = 'Your OTP is {}'.format(otp)
-    sender = '1000596446'
-    status = 0
-    status_message = ''
-
-    result = client.service.SendSimpleByApikey(api_key,
-                                               sender,
-                                               message,
-                                               receptors,
-                                               0,
-                                               1,
-                                               status,
-                                               status_message)
-    print(result)
-    print('OTP: ', otp)
+import random
+import datetime
 
 
 def get_random_otp():
-    otp = randint(1000, 9999)
+    """Generate a 6-digit random OTP."""
+    otp = random.randint(100000, 999999)
+    print(otp)
     return otp
-    
+
 def check_otp_expiration(mobile):
     try:
         user = models.MyUser.objects.get(mobile=mobile)
@@ -78,3 +30,53 @@ def check_otp_expiration(mobile):
 
     except models.MyUser.DoesNotExist:
         return False
+    
+# def send_otp(mobile, otp):
+#     mobile = [mobile, ]
+#     try:
+#         api = KavenegarAPI(Kavenegar_API)
+#         params = { 
+#             'sender' : '1000689696', 
+#             'receptor': mobile, 
+#             'message' : 'your otp is {}'.format(otp),
+#          }
+#         response = api.sms_send( params)
+#         print("OTP: ", otp)
+#         print(response)
+#     except APIException as e :
+#         print(e)
+#     except HTTPException as e :
+#         print(e)
+
+
+
+
+# #@background(schedule=10)
+# def send_otp_soap(mobile, otp):
+
+#     time.sleep(10)
+#     client = Client('http://api.kavenegar.com/soap/v1.asmx?wsdl')
+#     receptor = [mobile, ]
+
+#     empty_array_placeholder = client.get_type('ns0:ArrayOfString')
+#     receptors = empty_array_placeholder()
+#     for item in receptor:
+#         receptors['string'].append(item)
+
+#     api_key = Kavenegar_API
+#     message = 'Your OTP is {}'.format(otp)
+#     sender = '1000596446'
+#     status = 0
+#     status_message = ''
+
+#     result = client.service.SendSimpleByApikey(api_key,
+#                                                sender,
+#                                                message,
+#                                                receptors,
+#                                                0,
+#                                                1,
+#                                                status,
+#                                                status_message)
+#     print(result)
+#     print('OTP: ', otp)
+
