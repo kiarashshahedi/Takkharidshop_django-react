@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     CustomerRegisterLoginView, VerifyCustomerOTPView, CompleteCustomerProfileView,
-    SellerRegisterView, CompleteSellerProfileView, SellerLoginView
+    SellerRegisterView, CompleteSellerProfileView, SellerLoginView, LogoutView
 )
 
 
@@ -19,6 +19,9 @@ urlpatterns = [
     path('sellers/complete-profile/', CompleteSellerProfileView.as_view(), name='complete_seller_profile'),
     path('sellers/login/', SellerLoginView.as_view(), name='seller_login'),
     
+    # Logout
+    path('logout/', LogoutView.as_view(), name='logout'),
+
     # token
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import MyUser, Customer, Seller
+import re
 
 
 # Serializer for completing the customer profile
@@ -25,7 +26,12 @@ class CompleteSellerProfileSerializer(serializers.ModelSerializer):
 class OTPSerializer(serializers.Serializer):
     mobile = serializers.CharField(max_length=11)
     otp = serializers.CharField(max_length=6, required=False)
-
+    
+    def validate_mobile(self, value):
+        if not re.match(r'^\d{11}$', value):
+            raise serializers.ValidationError("Invalid mobile number.")
+        return value
+    
 # Serializer for seller login
 class SellerLoginSerializer(serializers.Serializer):
     mobile = serializers.CharField(max_length=11)

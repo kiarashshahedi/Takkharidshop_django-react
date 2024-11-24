@@ -17,12 +17,16 @@ from rest_framework.exceptions import PermissionDenied
 # Tokens
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+
 # files
 from .models import MyUser, Customer, Seller
 from products.models import Product
 from products.serializers import ProductSerializer
 from . import kavesms 
 from .kavesms import get_random_otp, check_otp_expiration
+from .permissions import IsCustomer, IsSeller
 
 # docs 
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -34,6 +38,12 @@ from .serializers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+
+
+
+
 # Custom APIKeyRequiredMixin
 class APIKeyRequiredMixin:
     def dispatch(self, request, *args, **kwargs):
@@ -42,7 +52,13 @@ class APIKeyRequiredMixin:
             raise PermissionDenied("Invalid API Key")
         return super().dispatch(request, *args, **kwargs)
     
-
+# Utility function to generate JWT tokens
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 # Utility function to send OTP (placeholder for actual implementation)
 def send_otp(mobile, otp):
@@ -50,6 +66,8 @@ def send_otp(mobile, otp):
     
 # Customer Registration/Login---------------------------------------------------------------------------------------
 class CustomerRegisterLoginView(APIView):
+    permission_classes = []  # No authentication required
+
     def post(self, request):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -64,6 +82,8 @@ class CustomerRegisterLoginView(APIView):
 
 # OTP Verification for Customers
 class VerifyCustomerOTPView(APIView):
+    permission_classes = []  # No authentication required
+
     def post(self, request):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -71,14 +91,18 @@ class VerifyCustomerOTPView(APIView):
             otp = serializer.validated_data['otp']
             user = get_object_or_404(MyUser, mobile=mobile)
             if user.is_otp_valid(otp):
+                tokens = get_tokens_for_user(user)
                 if not hasattr(user, 'customer_profile'):
-                    return Response({'message': 'Profile completion required.'}, status=status.HTTP_200_OK)
-                return Response({'message': 'Login successful.'}, status=status.HTTP_200_OK)
+                    return Response({'message': 'Profile completion required.', 'tokens': tokens}, status=status.HTTP_200_OK)
+                return Response({'message': 'Login successful.', 'tokens': tokens}, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Complete Customer Profile
 class CompleteCustomerProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsCustomer]
+
     def post(self, request):
         user = request.user
         serializer = CompleteCustomerProfileSerializer(data=request.data)
@@ -89,6 +113,8 @@ class CompleteCustomerProfileView(APIView):
 
 # Seller Registration (Step 1)
 class SellerRegisterView(APIView):
+    permission_classes = []  # No authentication required
+
     def post(self, request):
         serializer = SellerRegistrationSerializer(data=request.data)
         if serializer.is_valid():
@@ -104,6 +130,9 @@ class SellerRegisterView(APIView):
 
 # Complete Seller Profile (Step 2)
 class CompleteSellerProfileView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsSeller]
+
     def post(self, request):
         user = request.user
         serializer = CompleteSellerProfileSerializer(data=request.data)
@@ -114,6 +143,8 @@ class CompleteSellerProfileView(APIView):
 
 # Seller Login
 class SellerLoginView(APIView):
+    permission_classes = []  # No authentication required
+
     def post(self, request):
         serializer = SellerLoginSerializer(data=request.data)
         if serializer.is_valid():
@@ -122,73 +153,19 @@ class SellerLoginView(APIView):
             otp = serializer.validated_data['otp']
             user = get_object_or_404(MyUser, mobile=mobile, meli_code=meli_code)
             if user.is_otp_valid(otp):
-                return Response({'message': 'Login successful.'}, status=status.HTTP_200_OK)
+                tokens = get_tokens_for_user(user)
+                return Response({'message': 'Login successful.', 'tokens': tokens}, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class CustomerDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-
-    serializer_class = DashboardSerializer
-
-    def get(self, request):
-        customer = request.user.customer_profile
-        orders = []  # Fetch customer orders here
-        return Response({
-            "customer_info": CustomerProfileSerializer(customer).data,
-            "orders": orders,
-        })
-
-class SellerDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
-
-
-    def get(self, request):
-        seller = request.user.seller_profile
-        products = Product.objects.filter(seller=request.user)
-        product_serializer = ProductSerializer(products, many=True)
-        return Response({
-            "seller_info": SellerProfileSerializer(seller).data,
-            "products": product_serializer.data,
-        })
-
-
-class LoginView(APIView):
-    permission_classes = [AllowAny]
-
-    @ratelimit(key='ip', rate='5/m', method='POST', block=True)
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            mobile = serializer.validated_data['mobile']
-            password = serializer.validated_data['password']
-            user = authenticate(request, mobile=mobile, password=password)
-            if user:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    "message": "Logged in successfully",
-                    "access_token": str(refresh.access_token),
-                    "refresh_token": str(refresh)
-                })
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# -----------------------------------------------------------------------------------------------
 class LogoutView(APIView):
-
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Delete the user's token to log them out
         try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+            request.user.auth_token.delete()
+            return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error": "Failed to logout"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
+            return Response({'error': 'Failed to log out.'}, status=status.HTTP_400_BAD_REQUEST)

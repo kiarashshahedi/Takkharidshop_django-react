@@ -177,3 +177,6 @@ SECURE_BROWSER_XSS_FILTER = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+#Ensure HTTPS
+SECURE_SSL_REDIRECT = True
