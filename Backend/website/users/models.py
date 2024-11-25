@@ -72,6 +72,5 @@ class Seller(models.Model):
     is_approved = models.BooleanField(default=False)  # Admin approval
     business_license = models.FileField(upload_to='licenses/', null=True, blank=True)  # For verification
 
-
     def __str__(self):
         return self.shop_name or self.user.username

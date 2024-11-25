@@ -1,24 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Order, OrderItem, CartItem, Notification
-from .serializers import OrderSerializer, CartItemSerializer, NotificationSerializer
-from users.models import MyUser
-
-class CartItemViewSet(viewsets.ModelViewSet):
-    serializer_class = CartItemSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return CartItem.objects.filter(user=self.request.user, ordered=False)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response({"message": "Item removed from cart"}, status=status.HTTP_204_NO_CONTENT)
+from .models import Order, OrderItem, Notification
+from .serializers import OrderSerializer, NotificationSerializer
+from cart.models import CartItem
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()

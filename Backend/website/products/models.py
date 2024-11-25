@@ -41,6 +41,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField()
+    sold_quantity = models.PositiveIntegerField(default=0)  # New field to track sold quantity
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     date_added = models.DateTimeField(auto_now_add=True)  # Only auto_now_add=True
     average_rating = models.FloatField(default=0.0)

@@ -40,6 +40,10 @@ INSTALLED_APPS = [
     'users',
     'orders',
     'seller_panel',
+    'payments',
+    'dashboard',
+    'cart',
+    
 ]
 
 MIDDLEWARE = [
@@ -52,6 +56,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'csp.middleware.CSPMiddleware',
+    'axes.middleware.AxesMiddleware',
+
 ]
 
 ROOT_URLCONF = 'website.urls'
@@ -161,11 +168,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+# Enforce security on session 
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to cookies
+SESSION_COOKIE_SAMESITE = 'Strict'  # Protect against CSRF attacks (adjust to 'Lax' for cross-site functionality)
 
 # جلوگیری از حملات CSRF 
-SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Strict'  # Protect against CSRF attacks (adjust to 'Lax' for cross-site functionality)
 
 # هدرهای امنیتی HTTP
 SECURE_HSTS_SECONDS = 9  # ۱ سال
@@ -174,9 +185,25 @@ SECURE_HSTS_PRELOAD = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_BROWSER_XSS_FILTER = True
 
+# CSP
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = ["'self'", "https://trusted.cdn.com"]
+CSP_STYLE_SRC = ["'self'", "https://trusted.cdn.com"]
+CSP_IMG_SRC = ["'self'", "https://trusted.image.cdn.com"]
+CSP_FONT_SRC = ["'self'", "https://trusted.fonts.com"]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 #Ensure HTTPS
 SECURE_SSL_REDIRECT = False
+
+SECURE_HSTS_SECONDS = 31536000  # Enforce HSTS for one year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True  # Opt-in to HSTS preload list
+
+X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
+SECURE_BROWSER_XSS_FILTER = True  # Enable XSS protection in browsers
+
+AXES_FAILURE_LIMIT = 5
