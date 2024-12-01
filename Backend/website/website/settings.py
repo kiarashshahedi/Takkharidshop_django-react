@@ -133,7 +133,7 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'users.MyUser'
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # مدت زمان اعتبار توکن دسترسی
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # مدت زمان اعتبار توکن دسترسی
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # مدت زمان اعتبار توکن رفرش
     'ROTATE_REFRESH_TOKENS': False,  # چرخش توکن‌ها بعد از هر بار استفاده
     'BLACKLIST_AFTER_ROTATION': True,  # سیاهه‌برداری از توکن‌های استفاده شده
@@ -209,3 +209,17 @@ SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
 SECURE_BROWSER_XSS_FILTER = True  # Enable XSS protection in browsers
 
 AXES_FAILURE_LIMIT = 5
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
