@@ -4,19 +4,23 @@ from dotenv import load_dotenv
 import os
 from django.core.exceptions import ImproperlyConfigured
 
-
 load_dotenv()
 
+# Base dir
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# SECRET_KEY
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
+# API_KEY
 API_KEY = os.environ.get('API_KEY')
 if not API_KEY:
     raise ImproperlyConfigured("API_KEY is not set in environment variables")
 
+# DEBUG
 DEBUG = True
 
+# ALLOWED_HOSTS
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -43,9 +47,10 @@ INSTALLED_APPS = [
     'payments',
     'dashboard',
     'cart',
-    'axes',
-    
+    'axes',  
 ]
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -200,16 +205,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 #Ensure HTTPS
 SECURE_SSL_REDIRECT = False
-
 SECURE_HSTS_SECONDS = 31536000  # Enforce HSTS for one year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True  # Opt-in to HSTS preload list
-
 X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
 SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME type sniffing
 SECURE_BROWSER_XSS_FILTER = True  # Enable XSS protection in browsers
 
-AXES_FAILURE_LIMIT = 5
 
 LOGGING = {
     'version': 1,
@@ -228,5 +230,12 @@ LOGGING = {
 
 AXES_FAILURE_LIMIT = 10  # Number of failed attempts before blocking
 AXES_COOLOFF_TIME = timedelta(minutes=30)  # Cool-off time before unblocking
-AXES_USE_USER_AGENT = True  # Use user-agent for logging attempts
 AXES_ENABLED = True  # Enable Axes functionality
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Lock out by user and IP combination
+
+
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Updated Axes backend
+    'django.contrib.auth.backends.ModelBackend',  # Default Django authentication backend
+]
