@@ -233,6 +233,10 @@ AXES_COOLOFF_TIME = timedelta(minutes=30)  # Cool-off time before unblocking
 AXES_ENABLED = True  # Enable Axes functionality
 AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True  # Lock out by user and IP combination
 
+AXES_USERNAME_CALLABLE = None  # Default username extraction method
+AXES_IP_ADDRESS_CALLABLE = None  # Default IP address extraction method
+AXES_ONLY_USER_FAILURES = False  # False enables username + IP checks
+
 
 
 AUTHENTICATION_BACKENDS = [
