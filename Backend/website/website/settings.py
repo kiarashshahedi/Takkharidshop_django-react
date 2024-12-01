@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'payments',
     'dashboard',
     'cart',
+    'axes',
     
 ]
 
@@ -223,3 +224,9 @@ LOGGING = {
         'level': 'DEBUG',
     },
 }
+
+
+AXES_FAILURE_LIMIT = 10  # Number of failed attempts before blocking
+AXES_COOLOFF_TIME = timedelta(minutes=30)  # Cool-off time before unblocking
+AXES_USE_USER_AGENT = True  # Use user-agent for logging attempts
+AXES_ENABLED = True  # Enable Axes functionality
