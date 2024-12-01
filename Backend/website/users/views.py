@@ -166,7 +166,7 @@ class LogoutView(APIView):
             refresh_token = request.data.get('refresh')
             if refresh_token:
                 token = RefreshToken(refresh_token)
-                token.blacklist()
+                token.blacklist() # Only explicitly logout
                 return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
             return Response({'error': 'Refresh token is required for logout.'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:

@@ -135,13 +135,15 @@ AUTH_USER_MODEL = 'users.MyUser'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),  # مدت زمان اعتبار توکن دسترسی
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # مدت زمان اعتبار توکن رفرش
-    'ROTATE_REFRESH_TOKENS': True,  # چرخش توکن‌ها بعد از هر بار استفاده
+    'ROTATE_REFRESH_TOKENS': False,  # چرخش توکن‌ها بعد از هر بار استفاده
     'BLACKLIST_AFTER_ROTATION': True,  # سیاهه‌برداری از توکن‌های استفاده شده
     'AUTH_HEADER_TYPES': ('Bearer',),  # نوع هدر توکن برای ارسال درخواست‌ها
     'SIGNING_KEY': SECRET_KEY,  # کلید امضای توکن‌ها (همان SECRET_KEY پروژه)
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'ALGORITHM': 'HS256',  # الگوریتم رمزگذاری
+    'TOKEN_TYPE_CLAIM': 'token_type',
+
 }
 
 # / CORS / Allow requests from localhost:3000 (React)
