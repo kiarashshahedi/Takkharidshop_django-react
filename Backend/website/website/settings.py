@@ -153,11 +153,26 @@ SIMPLE_JWT = {
 }
 
 # / CORS / Allow requests from localhost:3000 (React)
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Frontend (React, etc.)
+    # "https://your-frontend-domain.com",  # If deployed
+]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "content-type",
     "x-api-key",
+    "authorization",
+    "x-csrftoken",
+]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
 ]
 
 # kavenegar
